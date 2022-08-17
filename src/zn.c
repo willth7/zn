@@ -19,8 +19,9 @@
 
 #include "elf/elf.h"
 
-uint8_t* zn_rlct_32(uint8_t* bits, uint32_t* bn, elf_st32_t* sym, uint16_t* symn, elf_r32_t* rel, uint16_t* reln, uint8_t* data, elf_sh32_t* sh, uint16_t shn) {
+uint8_t* zn_rlct_32(uint8_t* bits, uint32_t* bn, int8_t* str, uint32_t* strn, elf_st32_t* sym, uint16_t* symn, elf_r32_t* rel, uint16_t* reln, uint8_t* data, elf_sh32_t* sh, uint16_t shn, uint16_t shndx) {
 	uint32_t nbn = *bn;
+	uint32_t ntrn = *strn;
 	uint16_t nymn = *symn;
 	
 	for (uint16_t shi = 0; shi < shn; shi++) {
@@ -31,9 +32,14 @@ uint8_t* zn_rlct_32(uint8_t* bits, uint32_t* bn, elf_st32_t* sym, uint16_t* symn
 		else if (sh[shi].type == 2) { //symtab
 			memcpy(sym + *symn, data + sh[shi].offset, sh[shi].size);
 			for (uint16_t i = *symn; i < *symn + (sh[shi].size / sh[shi].entsize); i++) {
+				sym[i].name += *strn;
 				sym[i].value += *bn;
 			}
 			nymn += sh[shi].size / sh[shi].entsize;
+		}
+		else if (sh[shi].type == 3 && shi != shndx) { //strtab
+			memcpy(str + *strn, data + sh[shi].offset, sh[shi].size);
+			ntrn += sh[shi].size;
 		}
 		else if (sh[shi].type == 9) { //rel
 			memcpy(rel + *reln, data + sh[shi].offset, sh[shi].size);
@@ -45,6 +51,7 @@ uint8_t* zn_rlct_32(uint8_t* bits, uint32_t* bn, elf_st32_t* sym, uint16_t* symn
 		}
 	}
 	*bn = nbn;
+	*strn = ntrn;
 	*symn = nymn;
 }
 
@@ -55,6 +62,8 @@ int8_t main(int32_t argc, int8_t** argv) {
 	
 	uint8_t bits[65535];
 	uint32_t bn = 0;
+	int8_t str[65535];
+	uint32_t strn = 0;
 	elf_st32_t sym[65535];
 	uint16_t symn = 0;
 	elf_r32_t rel[65535];
@@ -79,7 +88,7 @@ int8_t main(int32_t argc, int8_t** argv) {
 			elf_sh32_t* sh = data + eh->shoff;
 			
 			if (eh->type == 1) {
-				zn_rlct_32(bits, &bn, sym, &symn, rel, &reln, data, sh, eh->shnum);
+				zn_rlct_32(bits, &bn, str, &strn, sym, &symn, rel, &reln, data, sh, eh->shnum, eh->shstrndx);
 			}
 		}
 		else if (data[4] == 2) {
@@ -91,12 +100,12 @@ int8_t main(int32_t argc, int8_t** argv) {
 		free(data);
 	}
 	
-	for (uint8_t i = 0; i < symn; i++) {
-		printf("sym value: %i\n", sym[i].value);
+	for (uint16_t i = 0; i < symn; i++) {
+		printf("symbol: %s\noffset: %i\ninfo: %i\n", str + sym[i].name, sym[i].value, sym[i].info);
 	}
-	for (uint8_t i = 0; i < reln; i++) {
-		printf("rel offset: %i\n", rel[i].offset);
-		printf("rel value: %i\n", sym[rel[i].info >> 8].value);
+	printf("\n");
+	for (uint16_t i = 0; i < reln; i++) {
+		printf("rel: %s\noffset: %i\ntype: %i\n", str + sym[rel[i].info >> 8].name, rel[i].offset, rel[i].info & 255);
 	}
 	
 	return 0;
