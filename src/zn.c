@@ -19,7 +19,7 @@
 
 #include "elf/elf.h"
 
-uint8_t* zn_rlct_32(uint8_t* bits, uint32_t* bn, int8_t* str, uint32_t* strn, elf_st32_t* sym, uint16_t* symn, elf_r32_t* rel, uint16_t* reln, uint8_t* data, elf_sh32_t* sh, uint16_t shn, uint16_t shndx) {
+void zn_prse_32(uint8_t* bits, uint32_t* bn, int8_t* str, uint32_t* strn, elf_st32_t* sym, uint16_t* symn, elf_r32_t* rel, uint16_t* reln, uint8_t* data, elf_sh32_t* sh, uint16_t shn, uint16_t shndx) {
 	uint32_t nbn = *bn;
 	uint32_t ntrn = *strn;
 	uint16_t nymn = *symn;
@@ -55,6 +55,18 @@ uint8_t* zn_rlct_32(uint8_t* bits, uint32_t* bn, int8_t* str, uint32_t* strn, el
 	*symn = nymn;
 }
 
+int8_t* zn_rlct_32(uint8_t* bits, uint32_t bn, int8_t* str, uint32_t strn, elf_st32_t* sym, uint16_t symn, elf_r32_t* rel, uint16_t reln) {
+	for (uint16_t symi = 0; symi < symn; symi++) {
+		if (sym[symi].shndx == 0) { //undefined symbol
+			for (uint16_t symj = 0; symj < symn; symj++) {
+				if (sym[symj].shndx && (!strcmp(str + sym[symi].name, str + sym[symj].name))) {
+					printf("%i\n", symj);
+				}
+			}
+		}
+	}
+}
+
 int8_t main(int32_t argc, int8_t** argv) {
 	if (argc < 3) {
 		return -1;
@@ -88,7 +100,7 @@ int8_t main(int32_t argc, int8_t** argv) {
 			elf_sh32_t* sh = data + eh->shoff;
 			
 			if (eh->type == 1) {
-				zn_rlct_32(bits, &bn, str, &strn, sym, &symn, rel, &reln, data, sh, eh->shnum, eh->shstrndx);
+				zn_prse_32(bits, &bn, str, &strn, sym, &symn, rel, &reln, data, sh, eh->shnum, eh->shstrndx);
 			}
 		}
 		else if (data[4] == 2) {
@@ -99,6 +111,8 @@ int8_t main(int32_t argc, int8_t** argv) {
 		
 		free(data);
 	}
+	
+	zn_rlct_32(bits, bn, str, strn, sym, symn, rel, reln);
 	
 	for (uint16_t i = 0; i < symn; i++) {
 		printf("symbol: %s\noffset: %i\ninfo: %i\n", str + sym[i].name, sym[i].value, sym[i].info);
