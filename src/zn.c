@@ -19,15 +19,27 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "avr/avr.h"
+
 typedef struct zn_sym_s {
 	int64_t str;
 	uint64_t addr;
 	uint8_t typ;
 } zn_sym_t;
 
-void (*zn_rel) (uint8_t*, zn_sym_t*, uint64_t, zn_sym_t*, uint64_t, int8_t*);
+void (*zn_rel) (uint8_t*, uint64_t,  uint64_t,uint8_t);
 
 void (*zn_writ) (uint8_t*, uint64_t, zn_sym_t*, uint64_t, zn_sym_t*, uint64_t, int8_t*);
+
+void zn_rlct(uint8_t* bin, zn_sym_t* sym, uint64_t symn, zn_sym_t* rel, uint64_t reln) {
+	for (uint64_t i = 0; i < reln; i++) {
+		for (uint8_t j = 0; j < symn; j++) {
+			if (rel[i].str == sym[j].str) {
+				zn_rel(bin, rel[i].addr, sym[j].addr, rel[i].typ);
+			}
+		}
+	}
+}
 
 void zn_read_zn(uint8_t* bin, uint64_t* bn, zn_sym_t* sym, uint64_t* symn, zn_sym_t* rel, uint64_t* reln, int8_t* path, int8_t* e) {
 	FILE* f = fopen(path, "r");
@@ -113,12 +125,19 @@ void zn_writ_zn(uint8_t* bin, uint64_t bn, zn_sym_t* sym, uint64_t symn, zn_sym_
 }
 
 int8_t main(uint32_t argc, int8_t** argv) {
-	if (argc < 3) {
-		printf("usage: au [link.zn] [link.zn] ... [link.zn] [binary.bin or link.zn]\n");
+	if (argc < 4) {
+		printf("usage: au [architecture] [link.zn] [link.zn] ... [link.zn] [binary.bin or link.zn]\n");
 		return -1;
 	}
 	
-	for (uint32_t i = 1; i < argc - 1; i++) {
+	if (!strcmp(argv[1], "avr")) {
+		zn_rel = avr_rel;
+	}
+	else {
+		printf("error: unsupported architecture\n");
+	}
+	
+	for (uint32_t i = 2; i < argc - 1; i++) {
 		if (strcmp(argv[i] + strlen(argv[i]) - 3, ".zn")) {
 			printf("error: expected .zn file\n");
 			return -1;
@@ -144,9 +163,11 @@ int8_t main(uint32_t argc, int8_t** argv) {
 	uint64_t reln = 0;
 	int8_t e = 0;
 	
-	for (uint32_t i = 1; i < argc - 1; i++) {
+	for (uint32_t i = 2; i < argc - 1; i++) {
 		zn_read_zn(bin, &bn, sym, &symn, rel, &reln, argv[i], &e);
 	}
+	
+	zn_rlct(bin, sym, symn, rel, reln);
 	
 	if (!e) {
 		for (uint16_t i = 0; i < symn; i++) {
