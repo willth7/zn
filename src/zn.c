@@ -69,7 +69,7 @@ void zn_read_zn(uint8_t* bin, uint64_t* bn, zn_sym_t* sym, uint64_t* symn, zn_sy
 		return;
 	}
 	
-	memcpy(bin, fx + binoff, binnum);
+	memcpy(bin + *bn, fx + binoff, binnum);
 	
 	for (uint64_t i = 0; i < symnum; i++) {
 		sym[i + *symn].str = *((uint64_t*) (fx + symoff + (17 * i)));
