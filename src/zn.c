@@ -1,15 +1,15 @@
 //   Copyright 2022 Will Thomas
 //
-//   Licensed under the Apache License, Verrion 2.0 (the "License");
+//   Licensed under the Apache License, Version 2.0 (the "License");
 //   you may not use this file except in compliance with the License.
 //   You may obtain a copy of the License at
 //
-//       http://www.apache.org/licenses/LICENSE-2.0
+//       http://www.apache.org/licenses/LICENSE-2.0;
 //
 //   Unless required by applicable law or agreed to in writing, software
-//   distributed under the License is distributed on an "AS IS" BAriS,
+//   distributed under the License is distributed on an "AS IS" BASIS,
 //   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-//   See the License for the specific language governing permisrions and
+//   See the License for the specific language governing permissions and
 //   limitations under the License.
 
 //   gloria in excelsis deo
@@ -70,11 +70,11 @@ void zn_read_zn(uint8_t* bin, uint64_t* bn, zn_sym_t* sym, uint64_t* symn, zn_sy
 	}
 	
 	memcpy(bin, fx + binoff, binnum);
-	memcpy(sym, fx + symoff, symnum * 17);
-	memcpy(rel, fx + reloff, relnum * 17);
 	
 	for (uint64_t i = 0; i < symnum; i++) {
-		sym[i + *symn].addr += *bn;
+		sym[i + *symn].str = *((uint64_t*) (fx + symoff + (17 * i)));
+		sym[i + *symn].addr = *((uint64_t*) (fx + symoff + (17 * i) + 8)) + *bn;
+		sym[i + *symn].typ = *(fx + symoff + (17 * i) + 16);
 		for (uint64_t j = 0; j < *symn; j++) {
 			if (sym[i + *symn].str == sym[j].str) {
 				printf("[%s] error: symbol '%s' already defined\n", path, (int8_t*) &(sym[i + *symn].str));
@@ -84,7 +84,9 @@ void zn_read_zn(uint8_t* bin, uint64_t* bn, zn_sym_t* sym, uint64_t* symn, zn_sy
 	}
 	
 	for (uint64_t i = 0; i < relnum; i++) {
-		rel[i + *reln].addr += *bn;
+		rel[i + *reln].str = *((uint64_t*) (fx + reloff + (17 * i)));
+		rel[i + *reln].addr = *((uint64_t*) (fx + reloff + (17 * i) + 8)) + *bn;
+		rel[i + *reln].typ = *(fx + reloff + (17 * i) + 16);
 	}
 	
 	*bn += binnum;
@@ -114,8 +116,17 @@ void zn_writ_zn(uint8_t* bin, uint64_t bn, zn_sym_t* sym, uint64_t symn, zn_sym_
 	memcpy(buf + 44, &reln, 8);
 	
 	memcpy(buf + binoff, bin, bn);
-	memcpy(buf + symoff, sym, symn * 17);
-	memcpy(buf + reloff, rel, reln * 17);
+	for (uint64_t i = 0; i < symn; i++) {
+		memcpy(buf + symoff + (17 * i), &(sym[i].str), 8);
+		memcpy(buf + symoff + (17 * i) + 8, &(sym[i].addr), 8);
+		memcpy(buf + symoff + (17 * i) + 16, &(sym[i].typ), 1);
+	}
+	
+	for (uint64_t i = 0; i < reln; i++) {
+		memcpy(buf + reloff + (17 * i), &(rel[i].str), 8);
+		memcpy(buf + reloff + (17 * i) + 8, &(rel[i].addr), 8);
+		memcpy(buf + reloff + (17 * i) + 16, &(rel[i].typ), 1);
+	}
 	
 	FILE* f = fopen(path, "w");
 	fwrite(buf, 52 + bn + (symn * 17) + (reln * 17), 1, f);
@@ -170,13 +181,6 @@ int8_t main(uint32_t argc, int8_t** argv) {
 	zn_rlct(bin, sym, symn, rel, reln);
 	
 	if (!e) {
-		for (uint16_t i = 0; i < symn; i++) {
-			printf("[sym]\tname: %s\n\taddr: %lu\n\ttyp: %hhu\n", (int8_t*) &(sym[i].str), sym[i].addr, sym[i].typ);
-		}
-		
-		for (uint16_t i = 0; i < reln; i++) {
-			printf("[rel]\tname: %s\n\taddr: %lu\n\ttyp: %hhu\n", (int8_t*) &(rel[i].str), rel[i].addr, rel[i].typ);
-		}
 		zn_writ(bin, bn, sym, symn, rel, reln, argv[argc - 1]);
 	}
 	
