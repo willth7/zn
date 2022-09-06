@@ -20,6 +20,7 @@
 #include <stdio.h>
 
 #include "avr/avr.h"
+#include "arm/arm.h"
 
 typedef struct zn_sym_s {
 	int64_t str;
@@ -92,6 +93,8 @@ void zn_read_zn(uint8_t* bin, uint64_t* bn, zn_sym_t* sym, uint64_t* symn, zn_sy
 	*bn += binnum;
 	*symn += symnum;
 	*reln += relnum;
+	
+	free(fx);
 }
 
 void zn_writ_bin(uint8_t* bin, uint64_t bn, zn_sym_t* sym, uint64_t symn, zn_sym_t* rel, uint64_t reln, int8_t* path) {
@@ -143,6 +146,9 @@ int8_t main(uint32_t argc, int8_t** argv) {
 	
 	if (!strcmp(argv[1], "avr")) {
 		zn_rel = avr_rel;
+	}
+	else if (!strcmp(argv[1], "arm")) {
+		zn_rel = arm_rel;
 	}
 	else {
 		printf("error: unsupported architecture\n");
