@@ -25,7 +25,22 @@ void arm_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ) {
 		bin[addr] |= rddr;
 	}
 	else if (typ == 2) {
-		rddr = ((rddr - addr) - 4) / 4;
+		rddr = ((rddr - addr) - 2) / 4;
 		bin[addr] |= rddr;
+	}
+	else if (typ == 3) {
+		int16_t nddr = ((rddr - addr) - 4) / 2;
+		nddr |= (nddr >> 5) & 1024;
+		bin[addr] |= nddr;
+		bin[addr + 1] |= (nddr >> 8) & 7;
+	}
+	else if (typ == 4) {
+		int32_t nddr = ((rddr - addr) - 4) / 2;
+		nddr |= (nddr >> 8) & 8388608;
+		bin[addr + 2] |= nddr;
+		bin[addr + 3] |= (nddr >> 8) & 7;
+		bin[addr] |= nddr >> 11;
+		bin[addr + 1] |= (nddr >> 19) & 3;
+		bin[addr + 1] |= (nddr >> 23) & 4;
 	}
 }
