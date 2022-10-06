@@ -20,7 +20,7 @@
 #include <stdio.h>
 
 #include "avr/avr.h"
-#include "arm/arm.h"
+#include "arm/32.h"
 
 typedef struct zn_sym_s {
 	int64_t str;
@@ -147,8 +147,14 @@ int8_t main(uint32_t argc, int8_t** argv) {
 	if (!strcmp(argv[1], "avr")) {
 		zn_rel = avr_rel;
 	}
-	else if (!strcmp(argv[1], "arm")) {
-		zn_rel = arm_rel;
+	else if (!strcmp(argv[1], "aarch32")) {
+		zn_rel = arm_32_rel;
+	}
+	else if (!strcmp(argv[1], "aarch64")) {
+		//zn_rel = arm_64_rel; todo
+	}
+	else if (!strcmp(argv[1], "x86")) {
+		//zn_rel = x86_rel; todo
 	}
 	else {
 		printf("error: unsupported architecture\n");

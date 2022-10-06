@@ -19,7 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 
-void arm_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ) {
+void arm_32_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ) {
 	if (typ == 1) {
 		rddr = ((rddr - addr) - 4) / 2;
 		bin[addr] |= rddr;
