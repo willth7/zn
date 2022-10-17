@@ -19,7 +19,6 @@
 #include <string.h>
 #include <stdio.h>
 
-#include "avr/avr.h"
 #include "arm/32.h"
 
 typedef struct zn_sym_s {
@@ -144,10 +143,7 @@ int8_t main(uint32_t argc, int8_t** argv) {
 		return -1;
 	}
 	
-	if (!strcmp(argv[1], "avr")) {
-		zn_rel = avr_rel;
-	}
-	else if (!strcmp(argv[1], "aarch32")) {
+	if (!strcmp(argv[1], "aarch32")) {
 		zn_rel = arm_32_rel;
 	}
 	else if (!strcmp(argv[1], "aarch64")) {
