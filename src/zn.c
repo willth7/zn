@@ -17,9 +17,16 @@
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 #include <stdio.h>
 
+#include <fcntl.h>
+#include <sys/mman.h>
+#include <sys/stat.h>
+
 #include "arm/32.h"
+#include "arm/64.h"
+#include "x86/x86.h"
 
 typedef struct zn_sym_s {
 	int64_t str;
@@ -42,18 +49,18 @@ void zn_rlct(uint8_t* bin, zn_sym_t* sym, uint64_t symn, zn_sym_t* rel, uint64_t
 }
 
 void zn_read_zn(uint8_t* bin, uint64_t* bn, zn_sym_t* sym, uint64_t* symn, zn_sym_t* rel, uint64_t* reln, int8_t* path, int8_t* e) {
-	FILE* f = fopen(path, "r");
-	if (!f) {
-		printf("[%s] error: file doesn't exist\n", path);
+	int32_t fd = open(path, O_RDONLY);
+    if (fd == -1) {
+        printf("error: failed to open file '%s'\n", path);
 		*e = -1;
-		return;
-	}
-	fseek(f, 0, SEEK_END);
-	uint64_t fn = ftell(f);
-	uint8_t* fx = malloc(fn);
-	fseek(f, 0, SEEK_SET);
-	fread(fx, fn, 1, f);
-	fclose(f);
+        return;
+    }
+	
+    struct stat fs;
+    fstat(fd, &fs);
+	
+    uint8_t* fx = mmap(0, fs.st_size, PROT_READ, MAP_PRIVATE, fd, 0);
+    close(fd);
 	
 	uint32_t mag = *((uint32_t*) fx);
 	uint64_t binoff = *((uint64_t*) (fx + 4));
@@ -93,48 +100,60 @@ void zn_read_zn(uint8_t* bin, uint64_t* bn, zn_sym_t* sym, uint64_t* symn, zn_sy
 	*symn += symnum;
 	*reln += relnum;
 	
-	free(fx);
+	munmap(fx, fs.st_size);
 }
 
 void zn_writ_bin(uint8_t* bin, uint64_t bn, zn_sym_t* sym, uint64_t symn, zn_sym_t* rel, uint64_t reln, int8_t* path) {
-	FILE* f = fopen(path, "w");
-	fwrite(bin, bn, 1, f);
-	fclose(f);
+	int32_t fd = open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
+    if (fd == -1) {
+        printf("error: failed to create file '%s'\n", path);
+        return;
+    }
+    ftruncate(fd, bn);
+    uint8_t* mem = mmap(0, bn, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
+	memcpy(mem, bin, bn);
+	munmap(mem, bn);
+	close(fd);
 }
 
 void zn_writ_zn(uint8_t* bin, uint64_t bn, zn_sym_t* sym, uint64_t symn, zn_sym_t* rel, uint64_t reln, int8_t* path) {
-	uint8_t* buf = malloc(52 + bn + (symn * 17) + (reln * 17));
+	uint64_t memsz = 52 + bn + (symn * 17) + (reln * 17);
+	
+	int32_t fd = open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
+    if (fd == -1) {
+        printf("error: failed to create file '%s'\n", path);
+        return;
+    }
+    ftruncate(fd, memsz);
+    uint8_t* mem = mmap(0, memsz, PROT_READ | PROT_WRITE, MAP_SHARED, fd, 0);
 	
 	uint64_t binoff = 52;
 	uint64_t symoff = 52 + bn;
 	uint64_t reloff = 52 + bn + (symn * 17);
 	
-	memcpy(buf, "zinc", 4);
-	memcpy(buf + 4, &binoff, 8);
-	memcpy(buf + 12, &bn, 8);
-	memcpy(buf + 20, &symoff, 8);
-	memcpy(buf + 28, &symn, 8);
-	memcpy(buf + 36, &reloff, 8);
-	memcpy(buf + 44, &reln, 8);
+	memcpy(mem, "zinc", 4);
+	memcpy(mem + 4, &binoff, 8);
+	memcpy(mem + 12, &bn, 8);
+	memcpy(mem + 20, &symoff, 8);
+	memcpy(mem + 28, &symn, 8);
+	memcpy(mem + 36, &reloff, 8);
+	memcpy(mem + 44, &reln, 8);
 	
-	memcpy(buf + binoff, bin, bn);
+	memcpy(mem + binoff, bin, bn);
 	for (uint64_t i = 0; i < symn; i++) {
-		memcpy(buf + symoff + (17 * i), &(sym[i].str), 8);
-		memcpy(buf + symoff + (17 * i) + 8, &(sym[i].addr), 8);
-		memcpy(buf + symoff + (17 * i) + 16, &(sym[i].typ), 1);
+		memcpy(mem + symoff + (17 * i), &(sym[i].str), 8);
+		memcpy(mem + symoff + (17 * i) + 8, &(sym[i].addr), 8);
+		memcpy(mem + symoff + (17 * i) + 16, &(sym[i].typ), 1);
 	}
 	
 	for (uint64_t i = 0; i < reln; i++) {
-		memcpy(buf + reloff + (17 * i), &(rel[i].str), 8);
-		memcpy(buf + reloff + (17 * i) + 8, &(rel[i].addr), 8);
-		memcpy(buf + reloff + (17 * i) + 16, &(rel[i].typ), 1);
+		memcpy(mem + reloff + (17 * i), &(rel[i].str), 8);
+		memcpy(mem + reloff + (17 * i) + 8, &(rel[i].addr), 8);
+		memcpy(mem + reloff + (17 * i) + 16, &(rel[i].typ), 1);
 	}
 	
-	FILE* f = fopen(path, "w");
-	fwrite(buf, 52 + bn + (symn * 17) + (reln * 17), 1, f);
-	fclose(f);
-	
-	free(buf);
+	munmap(mem, memsz);
+	close(fd);
 }
 
 int8_t main(uint32_t argc, int8_t** argv) {
@@ -143,14 +162,14 @@ int8_t main(uint32_t argc, int8_t** argv) {
 		return -1;
 	}
 	
-	if (!strcmp(argv[1], "aarch32")) {
+	if (!strcmp(argv[1], "arm32")) {
 		zn_rel = arm_32_rel;
 	}
-	else if (!strcmp(argv[1], "aarch64")) {
-		//zn_rel = arm_64_rel; todo
+	else if (!strcmp(argv[1], "arm64")) {
+		zn_rel = arm_64_rel;
 	}
 	else if (!strcmp(argv[1], "x86")) {
-		//zn_rel = x86_rel; todo
+		zn_rel = x86_rel;
 	}
 	else {
 		printf("error: unsupported architecture\n");
