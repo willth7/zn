@@ -20,65 +20,88 @@
 #include <stdio.h>
 
 void x86_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ) {
-	if (typ == 1) {
+	if (typ == 1) { //rel imm
 		uint8_t bn = addr;
 		if (bin[bn] == 102) { //leg op
-			bn++;
+			bn += 1;
 		}
 		if (bin[bn] == 103) { //leg addr
-			bn++;
+			bn += 1;
 		}
 		if ((bin[bn] & 240) == 64) { //rex
-			bn++;
+			bn += 1;
 		}
 		if (bin[bn] == 15) {
 			bn += 2;
 		}
 		else {
-			bn++;
+			bn += 1;
 		}
-		int8_t nddr = rddr - addr;
+		int8_t nddr = rddr - (bn + 1);
 		bin[bn] = nddr;
 	}
 	else if (typ == 2) {
 		uint8_t bn = addr;
 		if (bin[bn] == 102) { //leg op
-			bn++;
+			bn += 1;
 		}
 		if (bin[bn] == 103) { //leg addr
-			bn++;
+			bn += 1;
 		}
 		if ((bin[bn] & 240) == 64) { //rex
-			bn++;
+			bn += 1;
 		}
 		if (bin[bn] == 15) {
 			bn += 2;
 		}
 		else {
-			bn++;
+			bn += 1;
 		}
-		int16_t nddr = rddr - addr;
+		int16_t nddr = rddr - (bn + 2);
 		bin[bn] = nddr;
 		bin[bn + 1] = nddr >> 8;
 	}
 	else if (typ == 3) {
 		uint8_t bn = addr;
 		if (bin[bn] == 102) { //leg op
-			bn++;
+			bn += 1;
 		}
 		if (bin[bn] == 103) { //leg addr
-			bn++;
+			bn += 1;
 		}
 		if ((bin[bn] & 240) == 64) { //rex
-			bn++;
+			bn += 1;
 		}
 		if (bin[bn] == 15) {
 			bn += 2;
 		}
 		else {
-			bn++;
+			bn += 1;
 		}
-		int32_t nddr = rddr - addr;
+		int32_t nddr = rddr - (bn + 4);
+		bin[bn] = nddr;
+		bin[bn + 1] = nddr >> 8;
+		bin[bn + 2] = nddr >> 16;
+		bin[bn + 3] = nddr >> 24;
+	}
+	else if (typ == 4) { //rel ip
+		uint8_t bn = addr;
+		if (bin[bn] == 102) { //leg op
+			bn += 1;
+		}
+		if (bin[bn] == 103) { //leg addr
+			bn += 1;
+		}
+		if ((bin[bn] & 240) == 64) { //rex
+			bn += 1;
+		}
+		if (bin[bn] == 15) {
+			bn += 3;
+		}
+		else {
+			bn += 2;
+		}
+		int32_t nddr = rddr - (bn + 4);
 		bin[bn] = nddr;
 		bin[bn + 1] = nddr >> 8;
 		bin[bn + 2] = nddr >> 16;
