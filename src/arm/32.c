@@ -68,4 +68,16 @@ void arm_32_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ) {
 		bin[addr] |= nddr & 15;
 		bin[addr + 1] |= (nddr >> 4) & 15;
 	}
+	else if (typ == 8) {
+		int16_t nddr = (rddr - addr) - 8;
+		if (nddr < 0) {
+			nddr *= -1;
+			bin[addr + 2] |= 64;
+		}
+		else {
+			bin[addr + 2] |= 128;
+		}
+		bin[addr] |= nddr;
+		bin[addr + 1] |= (nddr >> 8) & 15;
+	}
 }
