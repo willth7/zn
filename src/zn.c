@@ -29,7 +29,8 @@
 #include "x86/x86.h"
 
 typedef struct zn_sym_s {
-	int64_t str;
+	int64_t strl;
+	int64_t strh;
 	uint64_t addr;
 	uint8_t typ;
 } zn_sym_t;
@@ -41,7 +42,7 @@ void (*zn_writ) (uint8_t*, uint64_t, zn_sym_t*, uint64_t, zn_sym_t*, uint64_t, i
 void zn_rlct(uint8_t* bin, zn_sym_t* sym, uint64_t symn, zn_sym_t* rel, uint64_t reln) {
 	for (uint64_t i = 0; i < reln; i++) {
 		for (uint8_t j = 0; j < symn; j++) {
-			if (rel[i].str == sym[j].str) {
+			if (rel[i].strl == sym[j].strl && rel[i].strh == sym[j].strh) {
 				zn_rel(bin, rel[i].addr, sym[j].addr, rel[i].typ);
 			}
 		}
@@ -79,21 +80,23 @@ void zn_read_zn(uint8_t* bin, uint64_t* bn, zn_sym_t* sym, uint64_t* symn, zn_sy
 	memcpy(bin + *bn, fx + binoff, binnum);
 	
 	for (uint64_t i = 0; i < symnum; i++) {
-		sym[i + *symn].str = *((uint64_t*) (fx + symoff + (17 * i)));
-		sym[i + *symn].addr = *((uint64_t*) (fx + symoff + (17 * i) + 8)) + *bn;
-		sym[i + *symn].typ = *(fx + symoff + (17 * i) + 16);
+		sym[i + *symn].strl = *((uint64_t*) (fx + symoff + (25 * i)));
+		sym[i + *symn].strh = *((uint64_t*) (fx + symoff + (25 * i) + 8));
+		sym[i + *symn].addr = *((uint64_t*) (fx + symoff + (25 * i) + 16)) + *bn;
+		sym[i + *symn].typ = *(fx + symoff + (25 * i) + 24);
 		for (uint64_t j = 0; j < *symn; j++) {
-			if (sym[i + *symn].str == sym[j].str) {
-				printf("[%s] error: symbol '%s' already defined\n", path, (int8_t*) &(sym[i + *symn].str));
+			if (sym[i + *symn].strl == sym[j].strl && sym[i + *symn].strh == sym[j].strh) {
+				printf("[%s] error: symbol '%s%x' already defined\n", path, (int8_t*) &(sym[i + *symn].strl), (int8_t*) &(sym[i + *symn].strh));
 				*e = -1;
 			}
 		}
 	}
 	
 	for (uint64_t i = 0; i < relnum; i++) {
-		rel[i + *reln].str = *((uint64_t*) (fx + reloff + (17 * i)));
-		rel[i + *reln].addr = *((uint64_t*) (fx + reloff + (17 * i) + 8)) + *bn;
-		rel[i + *reln].typ = *(fx + reloff + (17 * i) + 16);
+		rel[i + *reln].strl = *((uint64_t*) (fx + reloff + (25 * i)));
+		rel[i + *reln].strh = *((uint64_t*) (fx + reloff + (25 * i) + 8));
+		rel[i + *reln].addr = *((uint64_t*) (fx + reloff + (25 * i) + 16)) + *bn;
+		rel[i + *reln].typ = *(fx + reloff + (25 * i) + 24);
 	}
 	
 	*bn += binnum;
@@ -117,7 +120,7 @@ void zn_writ_bin(uint8_t* bin, uint64_t bn, zn_sym_t* sym, uint64_t symn, zn_sym
 }
 
 void zn_writ_zn(uint8_t* bin, uint64_t bn, zn_sym_t* sym, uint64_t symn, zn_sym_t* rel, uint64_t reln, int8_t* path) {
-	uint64_t memsz = 52 + bn + (symn * 17) + (reln * 17);
+	uint64_t memsz = 52 + bn + (symn * 25) + (reln * 25);
 	
 	int32_t fd = open(path, O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
     if (fd == -1) {
@@ -129,7 +132,7 @@ void zn_writ_zn(uint8_t* bin, uint64_t bn, zn_sym_t* sym, uint64_t symn, zn_sym_
 	
 	uint64_t binoff = 52;
 	uint64_t symoff = 52 + bn;
-	uint64_t reloff = 52 + bn + (symn * 17);
+	uint64_t reloff = 52 + bn + (symn * 25);
 	
 	memcpy(mem, "zinc", 4);
 	memcpy(mem + 4, &binoff, 8);
@@ -141,15 +144,17 @@ void zn_writ_zn(uint8_t* bin, uint64_t bn, zn_sym_t* sym, uint64_t symn, zn_sym_
 	
 	memcpy(mem + binoff, bin, bn);
 	for (uint64_t i = 0; i < symn; i++) {
-		memcpy(mem + symoff + (17 * i), &(sym[i].str), 8);
-		memcpy(mem + symoff + (17 * i) + 8, &(sym[i].addr), 8);
-		memcpy(mem + symoff + (17 * i) + 16, &(sym[i].typ), 1);
+		memcpy(mem + symoff + (25 * i), &(sym[i].strl), 8);
+		memcpy(mem + symoff + (25 * i) + 8, &(sym[i].strh), 8);
+		memcpy(mem + symoff + (25 * i) + 16, &(sym[i].addr), 8);
+		memcpy(mem + symoff + (25 * i) + 24, &(sym[i].typ), 1);
 	}
 	
 	for (uint64_t i = 0; i < reln; i++) {
-		memcpy(mem + reloff + (17 * i), &(rel[i].str), 8);
-		memcpy(mem + reloff + (17 * i) + 8, &(rel[i].addr), 8);
-		memcpy(mem + reloff + (17 * i) + 16, &(rel[i].typ), 1);
+		memcpy(mem + reloff + (25 * i), &(rel[i].strl), 8);
+		memcpy(mem + reloff + (25 * i) + 8, &(rel[i].strh), 8);
+		memcpy(mem + reloff + (25 * i) + 16, &(rel[i].addr), 8);
+		memcpy(mem + reloff + (25 * i) + 24, &(rel[i].typ), 1);
 	}
 	
 	munmap(mem, memsz);
