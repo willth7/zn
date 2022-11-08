@@ -19,6 +19,6 @@
 #include <string.h>
 #include <stdio.h>
 
-void arm_64_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ) {
+void arm_64_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint64_t* sym) {
 	
 }

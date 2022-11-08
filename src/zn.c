@@ -29,13 +29,13 @@
 #include "x86/x86.h"
 
 typedef struct zn_sym_s {
-	int64_t strl;
-	int64_t strh;
+	uint64_t strl;
+	uint64_t strh;
 	uint64_t addr;
 	uint8_t typ;
 } zn_sym_t;
 
-void (*zn_rel) (uint8_t*, uint64_t,  uint64_t,uint8_t);
+void (*zn_rel) (uint8_t*, uint64_t, uint64_t, uint8_t, uint64_t*);
 
 void (*zn_writ) (uint8_t*, uint64_t, zn_sym_t*, uint64_t, zn_sym_t*, uint64_t, int8_t*);
 
@@ -43,7 +43,7 @@ void zn_rlct(uint8_t* bin, zn_sym_t* sym, uint64_t symn, zn_sym_t* rel, uint64_t
 	for (uint64_t i = 0; i < reln; i++) {
 		for (uint8_t j = 0; j < symn; j++) {
 			if (rel[i].strl == sym[j].strl && rel[i].strh == sym[j].strh) {
-				zn_rel(bin, rel[i].addr, sym[j].addr, rel[i].typ);
+				zn_rel(bin, rel[i].addr, sym[j].addr, rel[i].typ, &(rel[i].strl));
 			}
 		}
 	}
@@ -86,7 +86,7 @@ void zn_read_zn(uint8_t* bin, uint64_t* bn, zn_sym_t* sym, uint64_t* symn, zn_sy
 		sym[i + *symn].typ = *(fx + symoff + (25 * i) + 24);
 		for (uint64_t j = 0; j < *symn; j++) {
 			if (sym[i + *symn].strl == sym[j].strl && sym[i + *symn].strh == sym[j].strh) {
-				printf("[%s] error: symbol '%s%x' already defined\n", path, (int8_t*) &(sym[i + *symn].strl), (int8_t*) &(sym[i + *symn].strh));
+				printf("[%s] error: symbol '%s' already defined\n", path, (int8_t*) &(sym[i + *symn].strl));
 				*e = -1;
 			}
 		}

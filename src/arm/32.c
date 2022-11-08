@@ -19,16 +19,37 @@
 #include <string.h>
 #include <stdio.h>
 
-void arm_32_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ) {
+void arm_32_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint64_t* sym) {
 	if (typ == 1) {
+		if (((rddr - addr) - 4) % 2) {
+			printf("error: symbol '%s' out of alignment\n", sym);
+		}
+		else if ((((int64_t) (rddr - addr) - 4) / 2) > 127 || (((int64_t) (rddr - addr) - 4) / 2) < -128) {
+			printf("error: symbol '%s' out of range\n", sym);
+		}
+		
 		rddr = ((rddr - addr) - 4) / 2;
 		bin[addr] |= rddr;
 	}
 	else if (typ == 2) {
+		if (((rddr - addr) - 2) % 4) {
+			printf("error: symbol '%s' out of alignment\n", sym);
+		}
+		else if ((((rddr - addr) - 2) / 4) > 255) {
+			printf("error: symbol '%s' out of range\n", sym);
+		}
+		
 		rddr = ((rddr - addr) - 2) / 4;
 		bin[addr] |= rddr;
 	}
 	else if (typ == 3) {
+		if (((rddr - addr) - 4) % 2) {
+			printf("error: symbol '%s' out of alignment\n", sym);
+		}
+		else if ((((int64_t) (rddr - addr) - 4) / 2) > 1023 || (((int64_t) (rddr - addr) - 4) / 2) < -1024) {
+			printf("error: symbol '%s' out of range\n", sym);
+		}
+		
 		int16_t nddr = ((rddr - addr) - 4) / 2;
 		nddr |= (nddr >> 5) & 1024;
 		bin[addr] |= nddr;
