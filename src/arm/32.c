@@ -32,7 +32,7 @@ void arm_32_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint64_
 		bin[addr] |= rddr;
 	}
 	else if (typ == 2) {
-		if (((rddr - addr) - 2) % 4) {
+		if (((rddr - addr) - 2) % 2) {
 			printf("error: symbol '%s' out of alignment\n", sym);
 		}
 		else if ((((rddr - addr) - 2) / 4) > 255) {
