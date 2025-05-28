@@ -14,4 +14,4 @@
 
 //   introibo ad altare dei
 
-void arm_64_rel(uint8_t*, uint64_t, uint64_t, uint8_t, uint64_t*);
+void arm_64_rel(uint8_t*, uint64_t, uint64_t, uint8_t, uint8_t*);

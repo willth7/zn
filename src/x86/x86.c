@@ -19,7 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 
-void x86_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint64_t* sym) {
+void x86_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint8_t* sym) {
 	if (typ == 1) { //rel imm
 		uint8_t bn = addr;
 		if (bin[bn] == 102) { //leg op

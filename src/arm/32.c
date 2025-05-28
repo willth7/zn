@@ -19,7 +19,7 @@
 #include <string.h>
 #include <stdio.h>
 
-void arm_32_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint64_t* sym) {
+void arm_32_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint8_t* sym) {
 	if (typ == 1) {
 		if (((rddr - addr) - 4) % 2) {
 			printf("error: symbol '%s' out of alignment\n", sym);
