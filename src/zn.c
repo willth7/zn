@@ -25,7 +25,6 @@
 #include <sys/stat.h>
 
 #include "arm/32.h"
-#include "arm/64.h"
 #include "x86/x86.h"
 
 struct zn_sym_s {
@@ -191,9 +190,6 @@ int8_t main(uint32_t argc, int8_t** argv) {
 	
 	if (!strcmp(argv[1], "arm32")) {
 		zn_rel = arm_32_rel;
-	}
-	else if (!strcmp(argv[1], "arm64")) {
-		zn_rel = arm_64_rel;
 	}
 	else if (!strcmp(argv[1], "x86")) {
 		zn_rel = x86_rel;
