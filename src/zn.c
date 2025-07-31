@@ -217,11 +217,11 @@ int8_t main(uint32_t argc, int8_t** argv) {
 		return -1;
 	}
 	
-	uint8_t* bin = malloc(1000000);
+	uint8_t* bin = calloc(16777216, 1);
 	uint64_t bn = 0;
-	struct zn_sym_s* sym = malloc(1000000);
+	struct zn_sym_s* sym = calloc(16777216, 1);
 	uint64_t symn = 0;
-	struct zn_sym_s* rel = malloc(1000000);
+	struct zn_sym_s* rel = calloc(16777216, 1);
 	uint64_t reln = 0;
 	int8_t e = 0;
 	
