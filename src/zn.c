@@ -43,7 +43,6 @@ void zn_rlct(uint8_t* bin, struct zn_sym_s* sym, uint64_t symn, struct zn_sym_s*
 		for (uint8_t j = 0; j < symn; j++) {
 			if (!strcmp(rel[i].str, sym[j].str)) {
 				zn_rel(bin, rel[i].addr, sym[j].addr, rel[i].typ, rel[i].str);
-				
 			}
 		}
 	}
@@ -88,7 +87,7 @@ void zn_read_zn(uint8_t* bin, uint64_t* bn, struct zn_sym_s* sym, uint64_t* symn
 		sym[i + *symn].str = malloc(sym[i + *symn].len);
 		memcpy(sym[i + *symn].str, fx + stroff, sym[i + *symn].len);
 		for (uint64_t j = 0; j < *symn; j++) {
-			if (!strcmp(sym[i].str, sym[j].str)) {
+			if (!strcmp(sym[i + *symn].str, sym[j].str)) {
 				printf("[%s] error: symbol '%s' already defined\n", path, sym[i + *symn].str);
 				*e = -1;
 			}
@@ -98,7 +97,7 @@ void zn_read_zn(uint8_t* bin, uint64_t* bn, struct zn_sym_s* sym, uint64_t* symn
 	for (uint64_t i = 0; i < relnum; i++) {
 		rel[i + *reln].len = *((uint8_t*) (fx + reloff + (18 * i) + 8));
 		rel[i + *reln].addr = *((uint64_t*) (fx + reloff + (18 * i) + 9)) + *bn;
-		rel[i + *symn].typ = *(fx + reloff + (18 * i) + 17);
+		rel[i + *reln].typ = *(fx + reloff + (18 * i) + 17);
 		
 		uint64_t stroff = *((uint64_t*) (fx + reloff + (18 * i)));
 		rel[i + *reln].str = malloc(rel[i + *reln].len);

@@ -21,7 +21,7 @@
 
 void x86_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint8_t* sym) {
 	if (typ == 1) { //rel imm
-		uint8_t bn = addr;
+		uint64_t bn = addr;
 		if (bin[bn] == 102) { //leg op
 			bn += 1;
 		}
@@ -41,7 +41,7 @@ void x86_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint8_t* s
 		bin[bn] = nddr;
 	}
 	else if (typ == 2) {
-		uint8_t bn = addr;
+		uint64_t bn = addr;
 		if (bin[bn] == 102) { //leg op
 			bn += 1;
 		}
@@ -62,7 +62,7 @@ void x86_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint8_t* s
 		bin[bn + 1] = nddr >> 8;
 	}
 	else if (typ == 3) {
-		uint8_t bn = addr;
+		uint64_t bn = addr;
 		if (bin[bn] == 102) { //leg op
 			bn += 1;
 		}
@@ -85,7 +85,7 @@ void x86_rel(uint8_t* bin, uint64_t addr, uint64_t rddr, uint8_t typ, uint8_t* s
 		bin[bn + 3] = nddr >> 24;
 	}
 	else if (typ == 4) { //rel ip
-		uint8_t bn = addr;
+		uint64_t bn = addr;
 		if (bin[bn] == 102) { //leg op
 			bn += 1;
 		}
